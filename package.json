@@ -9,8 +9,10 @@
   },
   "author": "Richie Casto (https://github.com/rcasto)",
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
+    "chalk": "4.1.0",
+    "commander": "5.1.0",
     "node-fetch": "2.6.0"
-  }
+  },
+  "devDependencies": {}
 }
