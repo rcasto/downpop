@@ -1,67 +1,105 @@
 import fetch from 'node-fetch';
 
-const npmRegistryBaseUrl = `https://registry.npmjs.org/`;
-// const npmRegistryBaseUrl = `https://skimdb.npmjs.com/registry`;
+const commandName = '';
 const npmDownloadStatsBaseUrl = `https://api.npmjs.org/downloads/point/`;
-const timeRange = 'last-day';
-const npmPackages = [
-    'simplequad',
-    'adaptive-html',
-    'express-request-activity',
-    'readability-component',
-    'code-bed',
-    'social-contact'
+const timeRanges = [
+    'last-day',
+    'last-week',
+    'last-month',
+    'last-year'
 ];
 
 /**
  * @typedef {Object} PackageInfo
- * @property {string} name
- * @property {string} version
- * @property {string} description
- * @property {number} numberOfDownloads
+ * @property {string} packageName
+ * @property {number} numLastDayDownloads
+ * @property {number} numLastWeekDownloads
+ * @property {number} numLastMonthDownloads
+ * @property {number} numLastYearDownloads
+ * @property {boolean} success
  */
 
 /**
- * 
  * @param {string} packageName
  * @returns {Promise<PackageInfo>}
  */
 async function getNpmPackageInfo(packageName) {
-    const downloadStatsRequestUrl = `${npmDownloadStatsBaseUrl}${timeRange}/${packageName}`;
-    const packageRegistryRequestUrl = `${npmRegistryBaseUrl}${packageName}/latest`;
+    try {
+        const downloadStatsRequestUrls = timeRanges
+            .map(timeRange => `${npmDownloadStatsBaseUrl}${timeRange}/${packageName}`);
 
-    const downloadStatsRequestPromise = fetch(downloadStatsRequestUrl)
-        .then(response => response.json());
-    const packageRegistryRequestPromise = fetch(packageRegistryRequestUrl)
-        .then(response => response.json());
+        const downloadStatsRequestPromises = downloadStatsRequestUrls
+            .map(downloadStatsRequestUrl =>
+                fetch(downloadStatsRequestUrl)
+                    .then(response => response.json()));
 
-    const packageDataResults = await Promise.all([
-        downloadStatsRequestPromise,
-        packageRegistryRequestPromise
-    ]);
-    const [downloadStats, registryData] = packageDataResults;
+        const downloadStatsRequestResults = await Promise.all(downloadStatsRequestPromises);
+        const downloadStatsDownloadCounts = downloadStatsRequestResults
+            .map(downloadStatsRequestResult => downloadStatsRequestResult.downloads);
 
-    const {
-        downloads
-    } = downloadStats;
-    const {
-        name,
-        version,
-        description
-    } = registryData;
-    
-    return {
-        name,
-        version,
-        description,
-        numberOfDownloads: downloads
-    };
+        const [
+            numLastDayDownloads,
+            numLastWeekDownloads,
+            numLastMonthDownloads,
+            numLastYearDownloads
+        ] = downloadStatsDownloadCounts;
+        
+        return {
+            packageName,
+            numLastDayDownloads,
+            numLastWeekDownloads,
+            numLastMonthDownloads,
+            numLastYearDownloads,
+            success: true
+        };
+    } catch (err) {
+        return {
+            packageName,
+            numLastDayDownloads: -1,
+            numLastWeekDownloads: -1,
+            numLastMonthDownloads: -1,
+            numLastYearDownloads: -1,
+            success: false
+        };
+    }
 }
 
-const packageArgs = process.argv.slice(2);
-console.log(packageArgs);
+const npmPackages = process.argv.slice(2);
 
-// Promise.all(npmPackages
-//     .map(packageName => getNpmPackageInfo(packageName)))
-//     .then(console.log)
-//     .catch(console.error);
+if (npmPackages.length <= 0) {
+    console.log(`Usage: npx ${commandName} <package1> <package2> ... <packageN> or ${commandName} <package1> <package2> ... <packageN>`);
+} else {
+    Promise.all(npmPackages
+        .map(packageName => getNpmPackageInfo(packageName)))
+        .then(packageResults => {
+            const successfulPackageResults = [];
+            const failedPackageResults = [];
+            packageResults
+                .forEach(packageResult => {
+                    if (packageResult.success &&
+                        typeof packageResult.numLastDayDownloads === 'number') {
+                        successfulPackageResults.push(packageResult);
+                    } else {
+                        failedPackageResults.push(packageResult);
+                    }
+                });
+            return [
+                successfulPackageResults,
+                failedPackageResults
+            ];
+        })
+        .then(splitPackageResults => {
+            const [
+                successfulPackageResults,
+                failedPackageResults
+            ] = splitPackageResults;
+
+            console.log(successfulPackageResults);
+
+            if (failedPackageResults.length > 0) {
+                const failedPackageNames = failedPackageResults
+                    .map(packageResult => packageResult.packageName);
+                console.log(`Failed to get download stats for the following packages: ${failedPackageNames.join(', ')}`);
+            }
+        });
+}
