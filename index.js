@@ -12,10 +12,10 @@ const timeRanges = [
 /**
  * @typedef {Object} PackageInfo
  * @property {string} packageName
- * @property {number} numLastDayDownloads
- * @property {number} numLastWeekDownloads
- * @property {number} numLastMonthDownloads
- * @property {number} numLastYearDownloads
+ * @property {number} countLastDayDownloads
+ * @property {number} countLastWeekDownloads
+ * @property {number} countLastMonthDownloads
+ * @property {number} countLastYearDownloads
  * @property {boolean} success
  */
 
@@ -24,6 +24,11 @@ const timeRanges = [
  * @returns {Promise<PackageInfo>}
  */
 async function getNpmPackageInfo(packageName) {
+    let countLastDayDownloads = -1;
+    let countLastWeekDownloads = -1;
+    let countLastMonthDownloads = -1;
+    let countLastYearDownloads = -1;
+
     try {
         const downloadStatsRequestUrls = timeRanges
             .map(timeRange => `${npmDownloadStatsBaseUrl}${timeRange}/${packageName}`);
@@ -37,31 +42,22 @@ async function getNpmPackageInfo(packageName) {
         const downloadStatsDownloadCounts = downloadStatsRequestResults
             .map(downloadStatsRequestResult => downloadStatsRequestResult.downloads);
 
-        const [
-            numLastDayDownloads,
-            numLastWeekDownloads,
-            numLastMonthDownloads,
-            numLastYearDownloads
+        [
+            countLastDayDownloads,
+            countLastWeekDownloads,
+            countLastMonthDownloads,
+            countLastYearDownloads
         ] = downloadStatsDownloadCounts;
-        
-        return {
-            packageName,
-            numLastDayDownloads,
-            numLastWeekDownloads,
-            numLastMonthDownloads,
-            numLastYearDownloads,
-            success: true
-        };
-    } catch (err) {
-        return {
-            packageName,
-            numLastDayDownloads: -1,
-            numLastWeekDownloads: -1,
-            numLastMonthDownloads: -1,
-            numLastYearDownloads: -1,
-            success: false
-        };
-    }
+    } catch (err) { }
+
+    return {
+        packageName,
+        countLastDayDownloads,
+        countLastWeekDownloads,
+        countLastMonthDownloads,
+        countLastYearDownloads,
+        success: countLastDayDownloads >= 0
+    };
 }
 
 const npmPackages = process.argv.slice(2);
@@ -77,7 +73,7 @@ if (npmPackages.length <= 0) {
             packageResults
                 .forEach(packageResult => {
                     if (packageResult.success &&
-                        typeof packageResult.numLastDayDownloads === 'number') {
+                        typeof packageResult.countLastDayDownloads === 'number') {
                         successfulPackageResults.push(packageResult);
                     } else {
                         failedPackageResults.push(packageResult);
@@ -94,7 +90,26 @@ if (npmPackages.length <= 0) {
                 failedPackageResults
             ] = splitPackageResults;
 
-            console.log(successfulPackageResults);
+            if (successfulPackageResults.length > 0) {
+                console.table(successfulPackageResults
+                    .reduce((prevObj, currPackageInfo) => {
+                        const {
+                            countLastDayDownloads,
+                            countLastWeekDownloads,
+                            countLastMonthDownloads,
+                            countLastYearDownloads
+                         } = currPackageInfo;
+                        return {
+                            ...prevObj,
+                            [currPackageInfo.packageName]: {
+                                countLastDayDownloads,
+                                countLastWeekDownloads,
+                                countLastMonthDownloads,
+                                countLastYearDownloads
+                            }
+                        };
+                    }, {}));
+            }
 
             if (failedPackageResults.length > 0) {
                 const failedPackageNames = failedPackageResults
