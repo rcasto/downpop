@@ -1,0 +1,1 @@
+Just a simple barebones way to get download statistics for npm packages.
