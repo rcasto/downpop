@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const commandName = '';
+const commandName = 'downpop';
 const npmDownloadStatsBaseUrl = `https://api.npmjs.org/downloads/point/`;
 const timeRanges = [
     'last-day',
