@@ -1,11 +1,10 @@
 {
   "name": "downpop",
   "version": "0.0.2",
-  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "test": "node cli.js"
   },
   "author": "Richie Casto (https://github.com/rcasto)",
   "license": "MIT",

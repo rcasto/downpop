@@ -1,5 +1,6 @@
-import { getNpmPackageInfo } from './index';
+const { getNpmPackageInfo } = require('./index');
 
+const commandName = 'downpop';
 const npmPackages = process.argv.slice(2);
 
 if (npmPackages.length <= 0) {

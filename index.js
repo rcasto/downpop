@@ -1,6 +1,5 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-const commandName = 'downpop';
 const npmDownloadStatsBaseUrl = `https://api.npmjs.org/downloads/point/`;
 const timeRanges = [
     'last-day',
@@ -23,7 +22,7 @@ const timeRanges = [
  * @param {string} packageName
  * @returns {Promise<PackageInfo>}
  */
-export async function getNpmPackageInfo(packageName) {
+async function getNpmPackageInfo(packageName) {
     let countLastDayDownloads = -1;
     let countLastWeekDownloads = -1;
     let countLastMonthDownloads = -1;
@@ -59,3 +58,7 @@ export async function getNpmPackageInfo(packageName) {
         success: countLastDayDownloads >= 0
     };
 }
+
+module.exports = {
+    getNpmPackageInfo
+};
