@@ -19,10 +19,21 @@ const timeRanges = [
  */
 
 /**
+ * @param {string|string[]} packageNames
+ * @returns {string[]}
+ */
+function normalizeNpmPackageNames(packageNames) {
+    if (Array.isArray(packageNames)) {
+        return packageNames;
+    }
+    return [packageNames];
+}
+
+/**
  * @param {string} packageName
  * @returns {Promise<PackageInfo>}
  */
-async function getNpmPackageInfo(packageName) {
+async function _getNpmPackageInfo(packageName) {
     let countLastDayDownloads = -1;
     let countLastWeekDownloads = -1;
     let countLastMonthDownloads = -1;
@@ -59,6 +70,72 @@ async function getNpmPackageInfo(packageName) {
     };
 }
 
+/**
+ * @param {string|string[]} packageNames
+ * @returns {Promise<PackageInfo[]>}
+ */
+async function getNpmPackageInfo(packageNames) {
+    return Promise.all(
+        normalizeNpmPackageNames(packageNames)
+            .map(packageName => _getNpmPackageInfo(packageName))
+    );
+}
+
+/**
+ * @param {string|string[]} packageNames 
+ * @returns {void}
+ */
+async function printNpmPackageInfoTable(packageNames) {
+    try {
+        const npmPackageInfoResults = await getNpmPackageInfo(packageNames);
+
+        const successfulPackageResults = [];
+        const failedPackageResults = [];
+
+        npmPackageInfoResults
+            .forEach(packageResult => {
+                if (packageResult.success &&
+                    typeof packageResult.countLastDayDownloads === 'number') {
+                    successfulPackageResults.push(packageResult);
+                } else {
+                    failedPackageResults.push(packageResult);
+                }
+            });
+
+        // Yay! We got package data, let's form a pretty table
+        if (successfulPackageResults.length > 0) {
+            console.table(successfulPackageResults
+                .reduce((prevObj, currPackageInfo) => {
+                    const {
+                        countLastDayDownloads,
+                        countLastWeekDownloads,
+                        countLastMonthDownloads,
+                        countLastYearDownloads
+                    } = currPackageInfo;
+                    return {
+                        ...prevObj,
+                        [currPackageInfo.packageName]: {
+                            countLastDayDownloads,
+                            countLastWeekDownloads,
+                            countLastMonthDownloads,
+                            countLastYearDownloads
+                        }
+                    };
+                }, {}));
+        }
+
+        // Inform about packages we failed to info for
+        if (failedPackageResults.length > 0) {
+            const failedPackageNames = failedPackageResults
+                .map(packageResult => packageResult.packageName);
+            console.log(`Failed to get download stats for the following packages: ${failedPackageNames.join(', ')}`);
+        }
+    } catch (err) {
+        console.error(`An error occurred while attempting to collect npm package info: ${err}`);
+    }
+}
+
 module.exports = {
-    getNpmPackageInfo
+    getNpmPackageInfo,
+    printNpmPackageInfoTable
 };
