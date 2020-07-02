@@ -1,6 +1,6 @@
 {
   "name": "downpop",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Just a simple way to get a glance at download stats for npm packages.",
   "main": "index.js",
   "scripts": {
