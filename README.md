@@ -1,5 +1,5 @@
 # downpop
-Just a simple barebones way to get download statistics for npm packages.
+Just a simple way to get a glance at download stats for npm packages.
 ```
 npx downpop <package1> <package2> ... <packageN>
 ```

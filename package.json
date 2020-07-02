@@ -12,5 +12,16 @@
     "node-fetch": "2.6.0"
   },
   "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rcasto/downpop.git"
+  },
+  "keywords": [
+    "npm",
+    "npm-package-info",
+    "download-data",
+    "npm-cli",
+    "npx"
+  ],
   "bin": "./cli.js"
 }
