@@ -74,7 +74,7 @@ async function _getNpmPackageInfo(packageName) {
  * @param {string|string[]} packageNames
  * @returns {Promise<PackageInfo[]>}
  */
-async function getNpmPackageInfo(packageNames) {
+function getNpmPackageInfo(packageNames) {
     return Promise.all(
         normalizeNpmPackageNames(packageNames)
             .map(packageName => _getNpmPackageInfo(packageName))
@@ -83,7 +83,7 @@ async function getNpmPackageInfo(packageNames) {
 
 /**
  * @param {string|string[]} packageNames 
- * @returns {void}
+ * @returns {Promise<void>}
  */
 async function printNpmPackageInfoTable(packageNames) {
     try {
