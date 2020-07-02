@@ -3,6 +3,40 @@ Just a simple way to get a glance at download stats for npm packages.
 
 ![downpop usage](./downpop-usage.gif)
 
+## Usage
+```
+npx downpop <package1> <package2> ... <packageN>
+```
+
+### Programmatic API
+For an example of this you can see the [cli.js file in this repo](https://github.com/rcasto/downpop/blob/master/cli.js), which is actually what the npx command above is executing.
+
+The following 2 methods are exported for usage:
+```javascript
+/**
+ * @typedef {Object} PackageInfo
+ * @property {string} packageName
+ * @property {number} countLastDayDownloads
+ * @property {number} countLastWeekDownloads
+ * @property {number} countLastMonthDownloads
+ * @property {number} countLastYearDownloads
+ * @property {boolean} success
+ */
+
+/**
+ * @param {string|string[]} packageNames
+ * @returns {Promise<PackageInfo[]>}
+ */
+function getNpmPackageInfo(packageNames) {...}
+
+/**
+ * @param {string|string[]} packageNames 
+ * @returns {Promise<void>}
+ */
+function printNpmPackageInfoTable(packageNames) {...}
+```
+
+## Notes
 To display the output seen via the CLI, [console.table](https://developer.mozilla.org/en-US/docs/Web/API/Console/table) is used. So it may be subject to limitations based on the browser/environment it is ran in.
 
 If you have [Node.js](https://nodejs.org) installed, you will in turn have [npm](https://www.npmjs.com/get-npm) installed and thus [npx](https://github.com/npm/npx) should be available for you to use as well.
