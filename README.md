@@ -10,7 +10,7 @@ Just a simple way to get a glance at download stats for npm packages.
 npx downpop <package1> <package2> ... <packageN>
 ```
 
-### Via code (Node.js)
+### Via code
 1. Install the package using npm or otherwise:
     ```
     npm install downpop
