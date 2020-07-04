@@ -26,6 +26,10 @@ npx downpop <package1> <package2> ... <packageN>
     ]);
     ```
 
+### Examples
+- [Node.js](https://runkit.com/rcasto/5f00ea2df94b97001ad2817f)
+- [Browser](https://codepen.io/rcasto/pen/LYGQbPy)
+
 ## API
 ```javascript
 /**
