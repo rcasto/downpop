@@ -1,4 +1,17 @@
-const fetch = require('node-fetch');
+let fetch;
+
+// If we are in a browser, we will just use the
+// native window.fetch function
+//
+// If we are in Node.js, we will use node-fetch
+//
+// This isn't fool proof, but should work for most cases
+if (typeof window === 'object' &&
+    typeof window.fetch === 'function') {
+    fetch = window.fetch;
+} else {
+    fetch = require('node-fetch');
+} 
 
 const npmDownloadStatsBaseUrl = `https://api.npmjs.org/downloads/point/`;
 const timeRanges = [
