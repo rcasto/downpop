@@ -4,14 +4,29 @@ Just a simple way to get a glance at download stats for npm packages.
 ![downpop usage](./downpop-usage.gif)
 
 ## Usage
+
+### Via npx
 ```
 npx downpop <package1> <package2> ... <packageN>
 ```
 
-### Programmatic API
-For an example of this you can see the [cli.js file in this repo](https://github.com/rcasto/downpop/blob/master/cli.js), which is actually what the npx command above is executing.
+### Via code (Node.js)
+1. Install the package using npm or otherwise:
+    ```
+    npm install downpop
+    ```
+2. Import and use in your code:
+    ```javascript
+    const downpop = require('downpop');
 
-The following methods are exported for usage:
+    downpop.printNpmPackageInfoTable([
+        'jquery',
+        'react',
+        'vue'
+    ]);
+    ```
+
+## API
 ```javascript
 /**
  * @typedef {Object} PackageInfo
