@@ -1,3 +1,5 @@
+const { getPackageDownloadsRange } = require('./index');
+
 function buildChart(labels, values, maxTicks, title = '') {
     if (!Array.isArray(labels)) {
         throw new Error(`The labels parameter provided is not an array: ${labels}`);
@@ -111,4 +113,20 @@ const values = [
     70,
 ];
 
-printChart(labels, values, 40, 'Num downloads per package');
+const packageName = 'vue';
+const timeRange = 'last-month';
+
+getPackageDownloadsRange(packageName, timeRange)
+    .then(results => {
+        const title = `Downloads per day during last month for ${packageName}`;
+        const dayLabels = [];
+        const downloadValues = [];
+        
+        (results.downloads || [])
+            .forEach(result => {
+                dayLabels.push(result.day);
+                downloadValues.push(result.downloads);
+            });
+
+        printChart(dayLabels, downloadValues, 40, title);
+    });
