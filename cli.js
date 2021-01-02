@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { buildNpmPackageInfoChart } from './index.js';
+import { buildNpmPackageInfoCharts } from './index.js';
 
 const commandName = 'downpop';
 const npmPackages = process.argv.slice(2);
@@ -8,10 +8,10 @@ const npmPackages = process.argv.slice(2);
 if (npmPackages.length <= 0) {
     console.log(`Usage: npx ${commandName} <package1> <package2> ... <packageN> or ${commandName} <package1> <package2> ... <packageN>`);
 } else {
-    buildNpmPackageInfoChart(npmPackages)
+    buildNpmPackageInfoCharts(npmPackages)
         .then(packageChartResult => {
-            packageChartResult.charts
-                .forEach(chart => console.log(chart));
+            Object.keys(packageChartResult.charts)
+                .forEach(timeRange => console.log(packageChartResult.charts[timeRange]));
 
             if (packageChartResult.error) {
                 console.error(packageChartResult.error);

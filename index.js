@@ -25,8 +25,16 @@ const timeRanges = [
  */
 
 /**
- * @typedef {Object} PackageInfoResult
- * @property {string[]} charts
+ * @typedef {Object} PackageInfoCharts
+ * @property {string} last-day
+ * @property {string} last-week
+ * @property {string} last-month
+ * @property {string} last-year
+ */
+
+/**
+ * @typedef {Object} PackageInfoChartsResult
+ * @property {PackageInfoCharts} charts
  * @property {string} error
  */ 
 
@@ -199,9 +207,9 @@ export async function getNpmPackageInfo(packageNames) {
 
 /**
  * @param {string|string[]} packageNames 
- * @returns {Promise<PackageInfoResult>}
+ * @returns {Promise<PackageInfoChartsResult>}
  */
-export async function buildNpmPackageInfoChart(packageNames) {
+export async function buildNpmPackageInfoCharts(packageNames) {
     const result = {
         charts: [],
         error: '',
@@ -233,7 +241,7 @@ export async function buildNpmPackageInfoChart(packageNames) {
                         });
 
                     const title = `Number of downloads in ${timeRange} (${startDate} - ${endDate})`;
-                    result.charts.push(buildChart(labels, values, 50, title));
+                    result.charts[timeRange] = buildChart(labels, values, 50, title);
                 });
         }
 
