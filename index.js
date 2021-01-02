@@ -18,13 +18,17 @@ const timeRanges = [
 
 /**
  * @typedef {Object} PackageInfo
- * @property {string} packageName
- * @property {number} countLastDayDownloads
- * @property {number} countLastWeekDownloads
- * @property {number} countLastMonthDownloads
- * @property {number} countLastYearDownloads
- * @property {boolean} success
+ * @property {NpmPackageInfo[]} last-day
+ * @property {NpmPackageInfo[]} last-week
+ * @property {NpmPackageInfo[]} last-month
+ * @property {NpmPackageInfo[]} last-year
  */
+
+/**
+ * @typedef {Object} PackageInfoResult
+ * @property {string[]} charts
+ * @property {string} error
+ */ 
 
 async function getFetch() {
     // If we are in a browser, we will just use the
@@ -49,6 +53,10 @@ function isScopedPackage(packageName) {
     return (packageName || '')[0] === '@';
 }
 
+/**
+ * @param {any} packageInfo 
+ * @returns {boolean}
+ */
 function isPackageInfo(packageInfo) {
     return (
         typeof packageInfo === 'object' &&
@@ -70,6 +78,9 @@ function normalizeNpmPackageNames(packageNames) {
     return [packageNames];
 }
 
+/**
+ * @returns {PackageInfo}
+ */
 function normalizeNpmPackageInfo(packageInfo) {
     const normalizedPackageInfo = {};
     timeRanges
@@ -84,6 +95,11 @@ function normalizeNpmPackageInfo(packageInfo) {
     return normalizedPackageInfo;
 }
 
+/**
+ * @param {PackageInfo} bulkPackageInfo 
+ * @param {PackageInfo} individualPackageInfo 
+ * @returns {PackageInfo}
+ */
 function mergeNpmPackageInfo(bulkPackageInfo, individualPackageInfo) {
     if (!bulkPackageInfo) {
         bulkPackageInfo = {};
@@ -147,7 +163,7 @@ async function _getBulkNpmPackageInfo(packageNames) {
 
 /**
  * @param {string|string[]} packageNames
- * @returns {Promise<PackageInfo[]>}
+ * @returns {Promise<PackageInfo>}
  */
 export async function getNpmPackageInfo(packageNames) {
     const scopedPackages = [];
@@ -183,7 +199,7 @@ export async function getNpmPackageInfo(packageNames) {
 
 /**
  * @param {string|string[]} packageNames 
- * @returns {Promise<void>}
+ * @returns {Promise<PackageInfoResult>}
  */
 export async function buildNpmPackageInfoChart(packageNames) {
     const result = {
