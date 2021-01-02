@@ -1,17 +1,4 @@
-let fetch;
-
-// If we are in a browser, we will just use the
-// native window.fetch function
-//
-// If we are in Node.js, we will use node-fetch
-//
-// This isn't fool proof, but should work for most cases
-if (typeof window === 'object' &&
-    typeof window.fetch === 'function') {
-    fetch = window.fetch;
-} else {
-    fetch = require('node-fetch');
-} 
+import { buildChart } from './barchart.js';
 
 const npmDownloadStatsBaseUrl = `https://api.npmjs.org/downloads/point/`;
 const timeRanges = [
@@ -22,6 +9,14 @@ const timeRanges = [
 ];
 
 /**
+ * @typedef {Object} NpmPackageInfo
+ * @property {string} package
+ * @property {number} downloads
+ * @property {string} start
+ * @property {string} end
+ */
+
+/**
  * @typedef {Object} PackageInfo
  * @property {string} packageName
  * @property {number} countLastDayDownloads
@@ -30,6 +25,39 @@ const timeRanges = [
  * @property {number} countLastYearDownloads
  * @property {boolean} success
  */
+
+async function getFetch() {
+    // If we are in a browser, we will just use the
+    // native window.fetch function
+    //
+    // If we are in Node.js, we will use node-fetch
+    //
+    // This isn't fool proof, but should work for most cases
+    if (typeof window === 'object' &&
+        typeof window.fetch === 'function') {
+        return window.fetch;
+    } else {
+        return (await import('node-fetch')).default;
+    }
+}
+
+/**
+ * @param {string} packageName
+ * @returns {boolean}
+ */
+function isScopedPackage(packageName) {
+    return (packageName || '')[0] === '@';
+}
+
+function isPackageInfo(packageInfo) {
+    return (
+        typeof packageInfo === 'object' &&
+        typeof packageInfo.downloads === 'number' &&
+        typeof packageInfo.start === 'string' &&
+        typeof packageInfo.end === 'string' &&
+        typeof packageInfo.package === 'string'
+    );
+}
 
 /**
  * @param {string|string[]} packageNames
@@ -42,113 +70,159 @@ function normalizeNpmPackageNames(packageNames) {
     return [packageNames];
 }
 
+function normalizeNpmPackageInfo(packageInfo) {
+    const normalizedPackageInfo = {};
+    timeRanges
+        .forEach(timeRange => {
+            const packageInfoForTimeRange = packageInfo[timeRange];
+            if (isPackageInfo(packageInfoForTimeRange)) {
+                normalizedPackageInfo[timeRange] = [packageInfoForTimeRange];
+            } else {
+                normalizedPackageInfo[timeRange] = Object.values(packageInfoForTimeRange);
+            }
+        });
+    return normalizedPackageInfo;
+}
+
+function mergeNpmPackageInfo(bulkPackageInfo, individualPackageInfo) {
+    if (!bulkPackageInfo) {
+        bulkPackageInfo = {};
+    }
+    if (!individualPackageInfo) {
+        individualPackageInfo = {};
+    }
+    const mergedPackageInfo = {};
+    timeRanges
+        .forEach(timeRange => {
+            mergedPackageInfo[timeRange] = []
+                .concat(bulkPackageInfo[timeRange] || [])
+                .concat(individualPackageInfo[timeRange] || [])
+                .filter(packageInfo => !!packageInfo);
+        });
+    return mergedPackageInfo;
+}
+
 /**
  * @param {string} packageName
  * @returns {Promise<PackageInfo>}
  */
 async function _getNpmPackageInfo(packageName) {
-    let countLastDayDownloads = -1;
-    let countLastWeekDownloads = -1;
-    let countLastMonthDownloads = -1;
-    let countLastYearDownloads = -1;
-
     try {
+        const fetch = await getFetch();
         const downloadStatsRequestUrls = timeRanges
             .map(timeRange => `${npmDownloadStatsBaseUrl}${timeRange}/${packageName}`);
 
         const downloadStatsRequestPromises = downloadStatsRequestUrls
-            .map(downloadStatsRequestUrl =>
+            .map((downloadStatsRequestUrl, i) =>
                 fetch(downloadStatsRequestUrl)
-                    .then(response => response.json()));
+                    .then(response => response.json())
+                    .then(result => ({
+                        [timeRanges[i]]: result,
+                    })));
 
         const downloadStatsRequestResults = await Promise.all(downloadStatsRequestPromises);
-        const downloadStatsDownloadCounts = downloadStatsRequestResults
-            .map(downloadStatsRequestResult => downloadStatsRequestResult.downloads);
+        return normalizeNpmPackageInfo(downloadStatsRequestResults
+            .reduce((downloadStatsResults, downloadStatsResult) => ({
+                ...downloadStatsResults,
+                ...downloadStatsResult,
+            }), {}));
+    } catch (err) {
+        return null;
+    }
+}
 
-        [
-            countLastDayDownloads,
-            countLastWeekDownloads,
-            countLastMonthDownloads,
-            countLastYearDownloads
-        ] = downloadStatsDownloadCounts;
-    } catch (err) { }
-
-    return {
-        packageName,
-        countLastDayDownloads,
-        countLastWeekDownloads,
-        countLastMonthDownloads,
-        countLastYearDownloads,
-        success: countLastDayDownloads >= 0
-    };
+/**
+ * @param {string[]} packageNames
+ * @returns {Promise<PackageInfo>}
+ */
+async function _getBulkNpmPackageInfo(packageNames) {
+    if (packageNames.length <= 0) {
+        return null;
+    }
+    // construct a "package name" from all the packageNames provided and leverage
+    // the _getNpmPackageInfo utility function above
+    const bulkPackageName = packageNames.join(',');
+    return await _getNpmPackageInfo(bulkPackageName);
 }
 
 /**
  * @param {string|string[]} packageNames
  * @returns {Promise<PackageInfo[]>}
  */
-function getNpmPackageInfo(packageNames) {
-    return Promise.all(
-        normalizeNpmPackageNames(packageNames)
-            .map(packageName => _getNpmPackageInfo(packageName))
-    );
+export async function getNpmPackageInfo(packageNames) {
+    const scopedPackages = [];
+    const nonScopedPackages = [];
+
+    // splitting scoped vs. non-scoped here
+    // since non-scoped packages support bulk queries
+    // while scoped packages do not
+    // https://github.com/npm/registry/blob/master/docs/download-counts.md#bulk-queries
+    normalizeNpmPackageNames(packageNames)
+        .forEach(packageName => {
+            if (isScopedPackage(packageName)) {
+                scopedPackages.push(packageName);
+            } else {
+                nonScopedPackages.push(packageName);
+            }
+        });
+
+    const bulkPackageInfoPromise = _getBulkNpmPackageInfo(nonScopedPackages);
+    const individualPackageInfoPromises = scopedPackages
+        .map(scopedPackage => _getNpmPackageInfo(scopedPackage));
+
+    const [
+        bulkPackageResults,
+        individualPackageResults
+    ] = await Promise.all([
+        bulkPackageInfoPromise,
+        ...individualPackageInfoPromises
+    ]);
+
+    return mergeNpmPackageInfo(bulkPackageResults, individualPackageResults);
 }
 
 /**
  * @param {string|string[]} packageNames 
  * @returns {Promise<void>}
  */
-async function printNpmPackageInfoTable(packageNames) {
+export async function buildNpmPackageInfoChart(packageNames) {
+    const result = {
+        charts: [],
+        error: '',
+    };
+
     try {
         const npmPackageInfoResults = await getNpmPackageInfo(packageNames);
 
-        const successfulPackageResults = [];
-        const failedPackageResults = [];
+        const packageNamesSuccessfullyFetched = new Set(npmPackageInfoResults[timeRanges[0]]
+            .map(packageInfo => packageInfo.package));
+        const packageNamesFailedToFetch = packageNames.filter(packageName => !packageNamesSuccessfullyFetched.has(packageName));
 
-        npmPackageInfoResults
-            .forEach(packageResult => {
-                if (packageResult.success &&
-                    typeof packageResult.countLastDayDownloads === 'number') {
-                    successfulPackageResults.push(packageResult);
-                } else {
-                    failedPackageResults.push(packageResult);
-                }
-            });
+        // Yay! We got package data, let's form a pretty chart string
+        if (packageNamesSuccessfullyFetched.size > 0) {
+            timeRanges
+                .forEach(timeRange => {
+                    const title = `Number of downloads in ${timeRange}`;
+                    const labels = [];
+                    const values = [];
 
-        // Yay! We got package data, let's form a pretty table
-        if (successfulPackageResults.length > 0) {
-            console.table(successfulPackageResults
-                .reduce((prevObj, currPackageInfo) => {
-                    const {
-                        countLastDayDownloads,
-                        countLastWeekDownloads,
-                        countLastMonthDownloads,
-                        countLastYearDownloads
-                    } = currPackageInfo;
-                    return {
-                        ...prevObj,
-                        [currPackageInfo.packageName]: {
-                            countLastDayDownloads,
-                            countLastWeekDownloads,
-                            countLastMonthDownloads,
-                            countLastYearDownloads
-                        }
-                    };
-                }, {}));
+                    npmPackageInfoResults[timeRange]
+                        .forEach(packageInfo => {
+                            labels.push(packageInfo.package);
+                            values.push(packageInfo.downloads);
+                        });
+
+                    result.charts.push(buildChart(labels, values, 50, title));
+                });
         }
 
         // Inform about packages we failed to info for
-        if (failedPackageResults.length > 0) {
-            const failedPackageNames = failedPackageResults
-                .map(packageResult => packageResult.packageName);
-            console.log(`Failed to get download stats for the following packages: ${failedPackageNames.join(', ')}`);
+        if (packageNamesFailedToFetch.length > 0) {
+            result.error = `Failed to get download stats for the following packages: ${packageNamesFailedToFetch.join(', ')}`;
         }
     } catch (err) {
-        console.error(`An error occurred while attempting to collect npm package info: ${err}`);
+        result.error = `An error occurred while attempting to collect npm package info: ${err}`;
     }
-}
 
-module.exports = {
-    getNpmPackageInfo,
-    printNpmPackageInfoTable
-};
+    return result;
+}
