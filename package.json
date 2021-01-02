@@ -1,6 +1,6 @@
 {
   "name": "downpop",
-  "version": "0.0.9",
+  "version": "1.0.0",
   "description": "Just a simple way to get a glance at download stats for npm packages.",
   "main": "index.js",
   "type": "module",
@@ -25,5 +25,7 @@
     "npm-cli",
     "npx"
   ],
-  "bin": "./cli.js"
+  "bin": {
+    "downpop": "cli.js"
+  }
 }
