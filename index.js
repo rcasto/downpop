@@ -218,16 +218,21 @@ export async function buildNpmPackageInfoChart(packageNames) {
         if (packageNamesSuccessfullyFetched.size > 0) {
             timeRanges
                 .forEach(timeRange => {
-                    const title = `Number of downloads in ${timeRange}`;
+                    let startDate, endDate;
                     const labels = [];
                     const values = [];
 
                     npmPackageInfoResults[timeRange]
                         .forEach(packageInfo => {
+                            if (!startDate || !endDate) {
+                                startDate = packageInfo.start;
+                                endDate = packageInfo.end;
+                            }
                             labels.push(packageInfo.package);
                             values.push(packageInfo.downloads);
                         });
 
+                    const title = `Number of downloads in ${timeRange} (${startDate} - ${endDate})`;
                     result.charts.push(buildChart(labels, values, 50, title));
                 });
         }
