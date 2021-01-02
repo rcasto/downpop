@@ -1,5 +1,5 @@
 # downpop
-Just a simple way to get a glance at download stats for npm packages.
+Just a simple way to get a glance at raw download counts for npm packages.
 
 ![downpop usage](./downpop-usage.gif)
 
