@@ -19,11 +19,13 @@ npx downpop <package1> <package2> ... <packageN>
     ```javascript
     const downpop = require('downpop');
 
-    downpop.printNpmPackageInfoTable([
+    const packageInfoChartsResult = downpop.buildNpmPackageInfoCharts([
         'jquery',
         'react',
         'vue'
     ]);
+
+    console.log(packageInfoChartsResult.charts['last-month']);
     ```
 
 ### Examples
@@ -33,13 +35,19 @@ npx downpop <package1> <package2> ... <packageN>
 ## API
 ```javascript
 /**
+ * @typedef {Object} NpmPackageInfo
+ * @property {string} package
+ * @property {number} downloads
+ * @property {string} start
+ * @property {string} end
+ */
+
+/**
  * @typedef {Object} PackageInfo
- * @property {string} packageName
- * @property {number} countLastDayDownloads
- * @property {number} countLastWeekDownloads
- * @property {number} countLastMonthDownloads
- * @property {number} countLastYearDownloads
- * @property {boolean} success
+ * @property {NpmPackageInfo[]} last-day
+ * @property {NpmPackageInfo[]} last-week
+ * @property {NpmPackageInfo[]} last-month
+ * @property {NpmPackageInfo[]} last-year
  */
 
 /**
@@ -49,15 +57,27 @@ npx downpop <package1> <package2> ... <packageN>
 function getNpmPackageInfo(packageNames) {...}
 
 /**
- * @param {string|string[]} packageNames 
- * @returns {Promise<void>}
+ * @typedef {Object} PackageInfoCharts
+ * @property {string} last-day
+ * @property {string} last-week
+ * @property {string} last-month
+ * @property {string} last-year
  */
-function printNpmPackageInfoTable(packageNames) {...}
+
+/**
+ * @typedef {Object} PackageInfoChartsResult
+ * @property {PackageInfoCharts} charts
+ * @property {string} error
+ */ 
+
+/**
+ * @param {string|string[]} packageNames 
+ * @returns {Promise<PackageInfoChartsResult>}
+ */
+function buildNpmPackageInfoCharts(packageNames) {...}
 ```
 
 ## Notes
-- To form the output [console.table](https://developer.mozilla.org/en-US/docs/Web/API/Console/table) is used. So it may be subject to limitations based on the browser/environment it is ran in.
-
 - If you have [Node.js](https://nodejs.org) installed, you will in turn have [npm](https://www.npmjs.com/get-npm) installed and thus [npx](https://github.com/npm/npx) should be available for you to use as well.
 
 ## Resources
