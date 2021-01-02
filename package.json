@@ -3,6 +3,7 @@
   "version": "0.0.9",
   "description": "Just a simple way to get a glance at download stats for npm packages.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "node cli.js",
     "stats": "npx downpop downpop simplequad adaptive-html code-bed readability-component social-contact express-request-activity"
