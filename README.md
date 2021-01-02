@@ -10,6 +10,11 @@ Just a simple way to get a glance at raw download counts for npm packages.
 npx downpop <package1> <package2> ... <packageN>
 ```
 
+To make sure you are using the latest version you can also do:
+```
+npx downpop@latest <package1> <package2> ... <packageN>
+```
+
 ### Via code
 1. Install the package using npm or otherwise:
     ```
@@ -17,19 +22,17 @@ npx downpop <package1> <package2> ... <packageN>
     ```
 2. Import and use in your code:
     ```javascript
-    const downpop = require('downpop');
+    import { buildNpmPackageInfoCharts } from 'downpop';
 
-    const packageInfoChartsResult = downpop.buildNpmPackageInfoCharts([
+   buildNpmPackageInfoCharts([
         'jquery',
         'react',
         'vue'
-    ]);
-
-    console.log(packageInfoChartsResult.charts['last-month']);
+    ])
+    .then(packageInfoChartsResult => console.log(packageInfoChartsResult.charts['last-month']));
     ```
 
 ### Examples
-- [Node.js](https://runkit.com/rcasto/5f00ea2df94b97001ad2817f)
 - [Browser](https://codepen.io/rcasto/pen/LYGQbPy)
 
 ## API
